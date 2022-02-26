@@ -1,0 +1,47 @@
+[tool.poetry]
+name = "plab_toprate_backend"
+version = "0.1.0"
+description = ""
+authors = ["kurkl <hwick1396@gmail.com>"]
+
+[tool.poetry.dependencies]
+python = "^3.9"
+
+[tool.poetry.dev-dependencies]
+black = "^22.1.0"
+isort = "^5.10.1"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.black]
+line_length = 120
+target_version = ['py39']
+include = '\.pyi?$'
+exclude = '''
+(
+  /(
+    | \.git
+    | \.hg
+    | \.mypy_cache
+    | \.tox
+    | \.venv
+    | _build
+    | buck-out
+    | build
+    | migrations
+    | dist
+    | data
+  )/
+)
+'''
+
+[tool.isort]
+length_sort = true
+multi_line_output = 3
+include_trailing_comma = true
+force_grid_wrap = 0
+use_parentheses = true
+line_length = 110
+
