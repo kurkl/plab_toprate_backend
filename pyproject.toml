@@ -5,19 +5,27 @@ description = ""
 authors = ["kurkl <hwick1396@gmail.com>"]
 
 [tool.poetry.dependencies]
-python = "^3.9"
+python = "^3.10"
+fastapi = "^0.75.0"
+fastapi-utils = "^0.2.1"
+SQLAlchemy = "^1.4.32"
+environs = "^9.5.0"
+uvicorn = "^0.17.6"
+httpx = "^0.22.0"
 
 [tool.poetry.dev-dependencies]
 black = "^22.1.0"
 isort = "^5.10.1"
+pytest = "^7.1.0"
+pytest-asyncio = "^0.18.2"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.black]
-line_length = 120
-target_version = ['py39']
+line_length = 110
+target_version = ['py310']
 include = '\.pyi?$'
 exclude = '''
 (
@@ -45,3 +53,8 @@ force_grid_wrap = 0
 use_parentheses = true
 line_length = 110
 
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+filterwarnings = [
+    "ignore::DeprecationWarning"
+]
