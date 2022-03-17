@@ -106,7 +106,7 @@ celerybeat.pid
 *.sage.py
 
 # Environments
-.env
+.env.dev
 .venv
 env/
 venv/
@@ -144,3 +144,4 @@ cython_debug/
 
 # extra
 foo.py
+/docker/db/postgresql.conf

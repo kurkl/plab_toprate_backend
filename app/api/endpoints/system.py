@@ -1,5 +1,6 @@
-from fastapi import APIRouter
 import logging
+
+from fastapi import APIRouter
 
 logger = logging.getLogger(__name__)
 
@@ -14,4 +15,3 @@ async def healthcheck_service():
 @router.get("/health-db", name="system:health-db")
 async def healthcheck_service_db():
     return {"skip": "ok"}
-
