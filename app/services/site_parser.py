@@ -4,7 +4,7 @@ from operator import itemgetter
 
 import httpx
 from bs4 import BeautifulSoup
-from pydantic import Field, AnyHttpUrl, BaseSettings, validator
+from pydantic import Field, AnyHttpUrl, BaseSettings
 from tenacity import TryAgain, retry, after_log, wait_random, stop_after_attempt
 
 from app.schemas.topics import TopicSchema, CategorySchema, ParentCategorySchema
@@ -18,13 +18,6 @@ class PlabParserConfig(BaseSettings):
     index_page: AnyHttpUrl = Field(...)
     forum_page: AnyHttpUrl = Field(f"{index_page}/forum", exclude=True)
     login_page: AnyHttpUrl = Field(f"{forum_page}/login.php", exclude=True)
-
-    @validator("index_page", pre=True)
-    def check_index_page_is_available(cls, v: str, values: dict):
-        response = httpx.head(v, headers=values["headers"])
-        assert response.status_code == 200
-
-        return v
 
 
 class PLabParser:
@@ -52,12 +45,9 @@ class PLabParser:
 
         return result
 
-    async def get_top_rated_by_category(
-        self, category_url: str, pagination: int = 1, limit: int = 10
-    ) -> list[TopicSchema]:
+    async def get_topics_by_category(self, category_url: str, pagination: int = 1) -> list[TopicSchema]:
         """
         Get data about category topics and sort it by max leeches
-        :param limit: how many output topics
         :param category_url:
         :param pagination: how many scrap pages
         :return: list of Topic objects
@@ -82,18 +72,16 @@ class PLabParser:
                 link, title = topic.get("href"), topic.text
                 if rate and title:
                     results.append(
-                        {
-                            "link": f"{self.config.forum_page}/{link.lstrip()}",
-                            "title": title,
-                            "seeds": int(rate[0].next.text),
-                            "leech": int(rate[1].next.text),
-                        }
+                        dict(
+                            link=f"{self.config.forum_page}/{link.lstrip()}",
+                            title=title,
+                            seeders=int(rate[0].next.text),
+                            leechers=int(rate[1].next.text),
+                            # download_count=0,
+                        )
                     )
             page_num += 50
-
-        top_rated = sorted(results, key=itemgetter("leech"), reverse=True)[:limit]
-
-        return [TopicSchema(**item) for item in top_rated]
+        return [TopicSchema(**item) for item in results]
 
     @retry(stop=stop_after_attempt(5), wait=wait_random(min=1, max=3), after=after_log(logger, logging.DEBUG))
     async def get_categories(self) -> list[ParentCategorySchema]:
@@ -115,13 +103,21 @@ class PLabParser:
             item = parent_category.find("h4", {"class": "forumlink"})
             categories = []
             for category in parent_category.find_all("span", {"class": "sf_title"}):
+                title = category.text.strip()
+                slug = slugify(title)
                 categories.append(
-                    CategorySchema(
-                        title=category.text.strip(),
-                        url_path=category.find("a").get("href")[1:],
-                    )
+                    CategorySchema(title=title, url_path=category.find("a").get("href")[1:], slug=slug)
                 )
             if categories:
                 parent_categories.append(ParentCategorySchema(name=item.text.rstrip(), categories=categories))
 
         return parent_categories
+
+
+# Helper functions
+def slugify(title: str) -> str:
+    return "_".join(title.strip())
+
+
+def sort_topics_by_field(topics: list[TopicSchema], order_by: str = "leechers") -> list[TopicSchema]:
+    return sorted(topics, key=itemgetter(order_by), reverse=True)
